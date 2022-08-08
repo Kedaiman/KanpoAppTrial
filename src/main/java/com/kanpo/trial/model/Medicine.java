@@ -28,6 +28,17 @@ public class Medicine {
 	@Column
 	private String detailInfo;
 
+	@Column
+	private String imagePath;
+
+	public String getImagePath() {
+		return imagePath;
+	}
+
+	public void setImagePath(String imagePath) {
+		this.imagePath = imagePath;
+	}
+
 	// デフォルトコンストラクタ
 	public Medicine() {
 		super();
