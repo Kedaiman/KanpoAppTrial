@@ -8,6 +8,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
@@ -27,8 +28,19 @@ public class Question {
 	@OneToMany
 	private List<QuestionOption> optionList;
 
+	@OneToOne
+	private Question backNode = null;
+
 	//@ManyToMany
 	//private List<QuestionOption> nodeList;
+
+	public Question getBackNode() {
+		return backNode;
+	}
+
+	public void setBackNode(Question backNode) {
+		this.backNode = backNode;
+	}
 
 	public Question() {
 		super();

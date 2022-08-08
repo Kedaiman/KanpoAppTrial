@@ -107,9 +107,47 @@ public class KanpoRestController {
 				throw new BadRequestException("Internal Server Error");
 		}
 		nextQuestion = optQue.get();
+
+		// 分析のnowQuestionに返却する質問を設定
+		analysis.setNowQuestion(nextQuestion);
+		analysisRepository.saveAndFlush(analysis);
+
 		return new NextQuestion(analysis.getId()
 				, nextQuestion.getQuestionContent()
 				, nextQuestion.getOptionList()
+				, true);
+	}
+
+	@RequestMapping(value = "/backQuestion/{analysisId}")
+	public NextQuestion backQuestion(@PathVariable long analysisId) throws BadRequestException {
+
+		// analysisのデータをanalysisIdから参照して情報を取得する
+		Optional<Analysis> analysisOpt = analysisRepository.findById(analysisId);
+		// analysisIdに対応するanalysisが存在しない場合は例外送出
+		if (!analysisOpt.isPresent()) {
+			throw new BadRequestException("There is no analysis corresponding to analysisId");
+		}
+		Analysis analysis = analysisOpt.get();
+		// analysis.statusが既にENDになっている場合は、分析が完了しているので、エラー
+		if (analysis.getStatus() == Analysis.END) {
+			throw new BadRequestException("Analysis has already been completed");
+		}
+
+		// 現在のQuestionオブジェクトを取得する
+		// 前の質問が存在しない場合(例えばトップでの質問など）の場合はエラー
+		Question nowQuestion = analysis.getNowQuestion();
+		Question backQuestion = nowQuestion.getBackNode();
+		if (backQuestion == null) {
+			throw new BadRequestException("previous question does not exist");
+		}
+
+		// 分析のnowQuestionに返却する質問を設定
+		analysis.setNowQuestion(backQuestion);
+		analysisRepository.saveAndFlush(analysis);
+
+		return new NextQuestion(analysis.getId()
+				, backQuestion.getQuestionContent()
+				, backQuestion.getOptionList()
 				, true);
 	}
 
@@ -142,14 +180,17 @@ public class KanpoRestController {
 		Medicine med1 = new Medicine();
 		med1.setName("漢方1");
 		med1.setDetailInfo("漢方1についての説明です");
+		med1.setImagePath("img01.jpeg");
 		medicineRepository.saveAndFlush(med1);
 		Medicine med2 = new Medicine();
 		med2.setName("漢方2");
 		med2.setDetailInfo("漢方2についての説明です");
+		med2.setImagePath("img03.jpg");
 		medicineRepository.saveAndFlush(med2);
 		Medicine med3 = new Medicine();
 		med3.setName("漢方3");
 		med3.setDetailInfo("漢方3についての説明です");
+		med3.setImagePath("img04.jpeg");
 		medicineRepository.saveAndFlush(med3);
 
 		// 解答についてデータを登録しておく
@@ -197,6 +238,10 @@ public class KanpoRestController {
 		optionList2.add(option8);
 		que2.setOptionList(optionList2);
 		questionRepository.saveAndFlush(que2);
+
+		// que1の親ノードにque2を登録する
+		que1.setBackNode(que2);
+		questionRepository.saveAndFlush(que1);
 
 		topQuestionId = que2.getId();
 
