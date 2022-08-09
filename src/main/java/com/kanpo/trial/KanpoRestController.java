@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.kanpo.trial.exception.BadRequestException;
+import com.kanpo.trial.exception.InternalServerException;
 import com.kanpo.trial.model.Analysis;
 import com.kanpo.trial.model.Answer;
 import com.kanpo.trial.model.Medicine;
@@ -48,130 +49,147 @@ public class KanpoRestController {
 	QuestionRepository questionRepository;
 
 	@RequestMapping("/startAnalysis")
-	public NextQuestion startAnalysis() {
-		// TOPの質問を取得する
-		Optional<Question> topQuestion = questionRepository.findById(topQuestionId);
-		Analysis analysis = new Analysis(topQuestion.get());
-		analysisRepository.saveAndFlush(analysis);
-		return new NextQuestion(analysis.getId()
-				, analysis.getNowQuestion().getQuestionContent()
-				, analysis.getNowQuestion().getOptionList()
-				, true);
+	public NextQuestion startAnalysis() throws Exception {
+		try {
+			// TOPの質問を取得する
+			Optional<Question> topQuestion = questionRepository.findById(topQuestionId);
+			Analysis analysis = new Analysis(topQuestion.get());
+			analysisRepository.saveAndFlush(analysis);
+			return new NextQuestion(analysis.getId()
+					, analysis.getNowQuestion().getQuestionContent()
+					, analysis.getNowQuestion().getOptionList()
+					, true);
+		} catch (Exception e) {
+			// 例外が発生した場合はそのままスローしハンドラーに任せる
+			throw e;
+		}
 	}
 
 	@RequestMapping(value="/sendAnswer", method=RequestMethod.POST)
 	public NextQuestion sendAnswer(
-			@RequestBody SendAnswerRequest request) throws BadRequestException {
-
-		// analysisのデータをanalysisIdから参照して情報を取得する
-		Optional<Analysis> analysisOpt = analysisRepository.findById(request.analysisId);
-		// analysisIdに対応するanalysisが存在しない場合は例外送出
-		if (!analysisOpt.isPresent()) {
-			throw new BadRequestException("There is no analysis corresponding to analysisId");
-		}
-		Analysis analysis = analysisOpt.get();
-		// analysis.statusが既にENDになっている場合は、分析が完了しているので、エラー
-		if (analysis.getStatus() == Analysis.END) {
-			throw new BadRequestException("Analysis has already been completed");
-		}
-
-		// 現在のQuestionオブジェクトを取得する
-		Question nowQuestion = analysis.getNowQuestion();
-		// QuestionオブジェクトのoptionListと比較して存在しない選択番号が入力された場合はエラー
-		if (request.answerNum < 0 || request.answerNum >= nowQuestion.getOptionList().size()) {
-			throw new BadRequestException("Illegal answerNum was selected");
-		}
-
-		// 解答番号に合致する選択情報を取得する
-		QuestionOption queOpt = nowQuestion.getOptionList().get(request.answerNum);
-		// 次が質問か解答かをチェックする
-		Question nextQuestion = null;
-		if (queOpt.getAnswerId() != -1) {
-			// answerIdに対応する解答情報を取得する
-			Optional<Answer> answerOpt;
-			answerOpt = answerRepository.findById(queOpt.getAnswerId());
-			if (!answerOpt.isPresent()) {
-				throw new BadRequestException("Internal Server Error");
+			@RequestBody SendAnswerRequest request) throws Exception {
+		try {
+			// analysisのデータをanalysisIdから参照して情報を取得する
+			Optional<Analysis> analysisOpt = analysisRepository.findById(request.analysisId);
+			// analysisIdに対応するanalysisが存在しない場合は例外送出
+			if (!analysisOpt.isPresent()) {
+				throw new BadRequestException("There is no analysis corresponding to analysisId");
 			}
-			Answer answer = answerOpt.get();
-			analysis.setAnswerId(answer.getId());
-			analysis.setStatus(Analysis.END);
+			Analysis analysis = analysisOpt.get();
+			// analysis.statusが既にENDになっている場合は、分析が完了しているので、エラー
+			if (analysis.getStatus() == Analysis.END) {
+				throw new BadRequestException("Analysis has already been completed");
+			}
+
+			// 現在のQuestionオブジェクトを取得する
+			Question nowQuestion = analysis.getNowQuestion();
+			// QuestionオブジェクトのoptionListと比較して存在しない選択番号が入力された場合はエラー
+			if (request.answerNum < 0 || request.answerNum >= nowQuestion.getOptionList().size()) {
+				throw new BadRequestException("Illegal answerNum was selected");
+			}
+
+			// 解答番号に合致する選択情報を取得する
+			QuestionOption queOpt = nowQuestion.getOptionList().get(request.answerNum);
+			// 次が質問か解答かをチェックする
+			Question nextQuestion = null;
+			if (queOpt.getAnswerId() != -1) {
+				// answerIdに対応する解答情報を取得する
+				Optional<Answer> answerOpt;
+				answerOpt = answerRepository.findById(queOpt.getAnswerId());
+				if (!answerOpt.isPresent()) {
+					throw new InternalServerException("Failed to get answer");
+				}
+				Answer answer = answerOpt.get();
+				analysis.setAnswerId(answer.getId());
+				analysis.setStatus(Analysis.END);
+				analysisRepository.saveAndFlush(analysis);
+				return new NextQuestion(analysis.getId(), false);
+			}
+
+			// questionIdに対応する次の質問情報を取得する
+			Optional<Question> optQue;
+			optQue = questionRepository.findById(queOpt.getQuestionId());
+			if (!optQue.isPresent()) {
+					throw new InternalServerException("Failed to get next question");
+			}
+			nextQuestion = optQue.get();
+
+			// 分析のnowQuestionに返却する質問を設定
+			analysis.setNowQuestion(nextQuestion);
 			analysisRepository.saveAndFlush(analysis);
-			return new NextQuestion(analysis.getId(), false);
+
+			return new NextQuestion(analysis.getId()
+					, nextQuestion.getQuestionContent()
+					, nextQuestion.getOptionList()
+					, true);
+		} catch (Exception e) {
+			throw e;
 		}
-
-		// questionIdに対応する次の質問情報を取得する
-		Optional<Question> optQue;
-		optQue = questionRepository.findById(queOpt.getQuestionId());
-		if (!optQue.isPresent()) {
-				throw new BadRequestException("Internal Server Error");
-		}
-		nextQuestion = optQue.get();
-
-		// 分析のnowQuestionに返却する質問を設定
-		analysis.setNowQuestion(nextQuestion);
-		analysisRepository.saveAndFlush(analysis);
-
-		return new NextQuestion(analysis.getId()
-				, nextQuestion.getQuestionContent()
-				, nextQuestion.getOptionList()
-				, true);
 	}
 
 	@RequestMapping(value = "/backQuestion/{analysisId}")
-	public NextQuestion backQuestion(@PathVariable long analysisId) throws BadRequestException {
+	public NextQuestion backQuestion(@PathVariable long analysisId) throws Exception {
 
-		// analysisのデータをanalysisIdから参照して情報を取得する
-		Optional<Analysis> analysisOpt = analysisRepository.findById(analysisId);
-		// analysisIdに対応するanalysisが存在しない場合は例外送出
-		if (!analysisOpt.isPresent()) {
-			throw new BadRequestException("There is no analysis corresponding to analysisId");
+		try {
+			// analysisのデータをanalysisIdから参照して情報を取得する
+			Optional<Analysis> analysisOpt = analysisRepository.findById(analysisId);
+			// analysisIdに対応するanalysisが存在しない場合は例外送出
+			if (!analysisOpt.isPresent()) {
+				throw new BadRequestException("There is no analysis corresponding to analysisId");
+			}
+			Analysis analysis = analysisOpt.get();
+			// analysis.statusが既にENDになっている場合は、分析が完了しているので、エラー
+			if (analysis.getStatus() == Analysis.END) {
+				throw new BadRequestException("Analysis has already been completed");
+			}
+
+			// 現在のQuestionオブジェクトを取得する
+			// 前の質問が存在しない場合(例えばトップでの質問など）の場合はエラー
+			Question nowQuestion = analysis.getNowQuestion();
+			Question backQuestion = nowQuestion.getBackNode();
+			if (backQuestion == null) {
+				throw new BadRequestException("previous question does not exist");
+			}
+
+			// 分析のnowQuestionに返却する質問を設定
+			analysis.setNowQuestion(backQuestion);
+			analysisRepository.saveAndFlush(analysis);
+
+			return new NextQuestion(analysis.getId()
+					, backQuestion.getQuestionContent()
+					, backQuestion.getOptionList()
+					, true);
+		} catch (Exception e) {
+			throw e;
 		}
-		Analysis analysis = analysisOpt.get();
-		// analysis.statusが既にENDになっている場合は、分析が完了しているので、エラー
-		if (analysis.getStatus() == Analysis.END) {
-			throw new BadRequestException("Analysis has already been completed");
-		}
-
-		// 現在のQuestionオブジェクトを取得する
-		// 前の質問が存在しない場合(例えばトップでの質問など）の場合はエラー
-		Question nowQuestion = analysis.getNowQuestion();
-		Question backQuestion = nowQuestion.getBackNode();
-		if (backQuestion == null) {
-			throw new BadRequestException("previous question does not exist");
-		}
-
-		// 分析のnowQuestionに返却する質問を設定
-		analysis.setNowQuestion(backQuestion);
-		analysisRepository.saveAndFlush(analysis);
-
-		return new NextQuestion(analysis.getId()
-				, backQuestion.getQuestionContent()
-				, backQuestion.getOptionList()
-				, true);
 	}
 
 	@RequestMapping(value = "/getResult/{analysisId}")
-	public List<Medicine> getResult(@PathVariable long analysisId)  throws BadRequestException {
-		// analysisのデータをanalysisIdから参照して情報を取得する
-		Optional<Analysis> analysisOpt = analysisRepository.findById(analysisId);
-		// analysisIdに対応するanalysisが存在しない場合は例外送出
-		if (!analysisOpt.isPresent()) {
-			throw new BadRequestException("There is no analysis corresponding to analysisId");
-		}
-		Analysis analysis = analysisOpt.get();
-		// analysis.statusが既にENDになっている場合は、分析が完了しているので、エラー
-		if (analysis.getStatus() == Analysis.CONTINUE) {
-			throw new BadRequestException("Analysis not yet completed");
-		}
+	public List<Medicine> getResult(@PathVariable long analysisId)  throws Exception {
 
-		// analysisIdからresultIdを取得する
-		long answerId = analysis.getAnswerId();
-		Optional<Answer> answerOpt = answerRepository.findById(answerId);
-		if (!answerOpt.isPresent()) {
-			throw new BadRequestException("Internal Server Error");
+		try {
+			// analysisのデータをanalysisIdから参照して情報を取得する
+			Optional<Analysis> analysisOpt = analysisRepository.findById(analysisId);
+			// analysisIdに対応するanalysisが存在しない場合は例外送出
+			if (!analysisOpt.isPresent()) {
+				throw new BadRequestException("There is no analysis corresponding to analysisId");
+			}
+			Analysis analysis = analysisOpt.get();
+			// analysis.statusが既にENDになっている場合は、分析が完了しているので、エラー
+			if (analysis.getStatus() == Analysis.CONTINUE) {
+				throw new BadRequestException("Analysis not yet completed");
+			}
+
+			// analysisIdからresultIdを取得する
+			long answerId = analysis.getAnswerId();
+			Optional<Answer> answerOpt = answerRepository.findById(answerId);
+			if (!answerOpt.isPresent()) {
+				throw new InternalServerException("Failed to get answer");
+			}
+			return answerOpt.get().getMedicineList();
+		} catch (Exception e) {
+			throw e;
 		}
-		return answerOpt.get().getMedicineList();
 	}
 
 	@PostConstruct
