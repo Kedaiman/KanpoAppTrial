@@ -1,11 +1,15 @@
 package com.kanpo.trial.model;
 
+import java.sql.Timestamp;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToOne;
+import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
@@ -27,6 +31,27 @@ public class Analysis {
 
 	@OneToOne
 	private Question nowQuestion;
+
+	@Column
+	private Timestamp updateAt;
+
+	@PrePersist
+	public void onPrePersist() {
+		setUpdateAt(new Timestamp(System.currentTimeMillis()));
+	}
+
+	@PreUpdate
+	public void onPreUpdate() {
+		setUpdateAt(new Timestamp(System.currentTimeMillis()));
+	}
+
+	public Timestamp getUpdateAt() {
+		return updateAt;
+	}
+
+	public void setUpdateAt(Timestamp updateAt) {
+		this.updateAt = updateAt;
+	}
 
 	public long getAnswerId() {
 		return answerId;
