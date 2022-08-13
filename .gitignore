@@ -35,3 +35,4 @@ build/
 
 ### MY CUSTOMIZE ###
 **/src/main/resources/
+*.log

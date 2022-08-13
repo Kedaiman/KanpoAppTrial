@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.kanpo.trial.exception.BadRequestException;
 import com.kanpo.trial.exception.InternalServerException;
+import com.kanpo.trial.log.MyLogger;
 import com.kanpo.trial.model.Analysis;
 import com.kanpo.trial.model.Answer;
 import com.kanpo.trial.model.Medicine;
@@ -33,6 +34,7 @@ public class KanpoRestController {
 
 	public static long topQuestionId = -1;
 
+	/* リポジトリをDIコンテナから取得 */
 	@Autowired
 	AnalysisRepository analysisRepository;
 
@@ -55,12 +57,15 @@ public class KanpoRestController {
 			Optional<Question> topQuestion = questionRepository.findById(topQuestionId);
 			Analysis analysis = new Analysis(topQuestion.get());
 			analysisRepository.saveAndFlush(analysis);
+			MyLogger.info("Analysis data created successfully analysisId={0}", analysis.getId());
+
 			return new NextQuestion(analysis.getId()
 					, analysis.getNowQuestion().getQuestionContent()
 					, analysis.getNowQuestion().getOptionList()
 					, true);
 		} catch (Exception e) {
 			// 例外が発生した場合はそのままスローしハンドラーに任せる
+			MyLogger.error(e);
 			throw e;
 		}
 	}
@@ -68,7 +73,10 @@ public class KanpoRestController {
 	@RequestMapping(value="/sendAnswer", method=RequestMethod.POST)
 	public NextQuestion sendAnswer(
 			@RequestBody SendAnswerRequest request) throws Exception {
+
 		try {
+			// bodyパラメーターログ出力
+			request.outputLog();
 			// analysisのデータをanalysisIdから参照して情報を取得する
 			Optional<Analysis> analysisOpt = analysisRepository.findById(request.analysisId);
 			// analysisIdに対応するanalysisが存在しない場合は例外送出
@@ -99,6 +107,8 @@ public class KanpoRestController {
 				if (!answerOpt.isPresent()) {
 					throw new InternalServerException("Failed to get answer");
 				}
+				MyLogger.info("Successfully obtained answer");
+
 				Answer answer = answerOpt.get();
 				analysis.setAnswerId(answer.getId());
 				analysis.setStatus(Analysis.END);
@@ -113,6 +123,7 @@ public class KanpoRestController {
 					throw new InternalServerException("Failed to get next question");
 			}
 			nextQuestion = optQue.get();
+			MyLogger.info("Successfully obtained next question");
 
 			// 分析のnowQuestionに返却する質問を設定
 			analysis.setNowQuestion(nextQuestion);
@@ -123,6 +134,7 @@ public class KanpoRestController {
 					, nextQuestion.getOptionList()
 					, true);
 		} catch (Exception e) {
+			MyLogger.error(e);
 			throw e;
 		}
 	}
@@ -160,6 +172,7 @@ public class KanpoRestController {
 					, backQuestion.getOptionList()
 					, true);
 		} catch (Exception e) {
+			MyLogger.error(e);
 			throw e;
 		}
 	}
@@ -188,6 +201,7 @@ public class KanpoRestController {
 			}
 			return answerOpt.get().getMedicineList();
 		} catch (Exception e) {
+			MyLogger.error(e);
 			throw e;
 		}
 	}

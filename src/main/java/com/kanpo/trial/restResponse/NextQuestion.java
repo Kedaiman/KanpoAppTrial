@@ -3,6 +3,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.kanpo.trial.log.MyLogger;
 import com.kanpo.trial.model.QuestionOption;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -27,6 +28,13 @@ public class NextQuestion {
 			this.optionList.add(option.getOptionContent());
 		}
 		this.isNextExist = isNextExist;
+
+		this.outputLog();
+	}
+
+	public void outputLog() {
+		MyLogger.info("response: analysisId = {0}, isNextExist = {1}", analysisId, isNextExist);
+		return;
 	}
 
 	public boolean isNextExist() {
