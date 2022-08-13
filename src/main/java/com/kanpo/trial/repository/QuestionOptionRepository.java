@@ -7,6 +7,10 @@ import org.springframework.stereotype.Repository;
 
 import com.kanpo.trial.model.QuestionOption;
 
+/**
+ * QuestionOptionリポジトリインターフェイス
+ * @author keita
+ */
 @Repository
 public interface QuestionOptionRepository extends JpaRepository<QuestionOption, Long>{
 	public Optional<QuestionOption> findById(Long id);

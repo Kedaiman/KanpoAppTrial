@@ -7,6 +7,10 @@ import org.springframework.stereotype.Repository;
 
 import com.kanpo.trial.model.Medicine;
 
+/**
+ * Medicineリポジトリインターフェイス
+ * @author keita
+ */
 @Repository
 public interface MedicineRepository extends JpaRepository<Medicine, Long>{
 	public Optional<Medicine> findById(Long id);

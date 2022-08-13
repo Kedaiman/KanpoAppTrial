@@ -13,12 +13,19 @@ import com.kanpo.trial.log.MyLogger;
 import com.kanpo.trial.model.Analysis;
 import com.kanpo.trial.repository.AnalysisRepository;
 
+/**
+* スケジュールタスク実行クラス
+* @author　keita
+*/
 @Component
 public class ScheduledTasks {
 
 	@Autowired
 	AnalysisRepository analysisRepository;
 
+	/**
+	 * analysisオブジェクト定期削除実行メソッド
+	 */
 	@Scheduled(cron="${scheduledDeleteAnalysis.cron}")
 	public void scheduledDeleteAnalysis() {
 		try {

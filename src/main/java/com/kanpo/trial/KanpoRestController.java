@@ -29,12 +29,16 @@ import com.kanpo.trial.repository.QuestionRepository;
 import com.kanpo.trial.restRequest.SendAnswerRequest;
 import com.kanpo.trial.restResponse.NextQuestion;
 
+/**
+* RESTのコントローラークラス
+* @author　keita
+*/
 @RestController
 public class KanpoRestController {
 
+	/** 最初の質問オブジェクトのID */
 	public static long topQuestionId = -1;
 
-	/* リポジトリをDIコンテナから取得 */
 	@Autowired
 	AnalysisRepository analysisRepository;
 
@@ -50,6 +54,12 @@ public class KanpoRestController {
 	@Autowired
 	QuestionRepository questionRepository;
 
+	/**
+	 * /startAnalysis APIの処理メソッド
+	 *
+	 * @return TOPの質問を返却します
+	 * @throws Exception 例外
+	 */
 	@RequestMapping("/startAnalysis")
 	public NextQuestion startAnalysis() throws Exception {
 		try {
@@ -70,6 +80,13 @@ public class KanpoRestController {
 		}
 	}
 
+	/**
+	 * /sendAnswer APIの処理メソッド
+	 *
+	 * @param request 質問への回答
+	 * @return 次の質問を返却します
+	 * @throws Exception 例外
+	 */
 	@RequestMapping(value="/sendAnswer", method=RequestMethod.POST)
 	public NextQuestion sendAnswer(
 			@RequestBody SendAnswerRequest request) throws Exception {
@@ -139,6 +156,13 @@ public class KanpoRestController {
 		}
 	}
 
+	/**
+	 * /backQuestion APIの処理メソッド
+	 *
+	 * @param analysisId 解析ID
+	 * @return 前の質問を返却します
+	 * @throws Exception 例外
+	 */
 	@RequestMapping(value = "/backQuestion/{analysisId}")
 	public NextQuestion backQuestion(@PathVariable long analysisId) throws Exception {
 
@@ -177,6 +201,13 @@ public class KanpoRestController {
 		}
 	}
 
+	/**
+	 * /getResult APIの処理メソッド
+	 *
+	 * @param analysisId 解析ID
+	 * @return 解析結果を返却します
+	 * @throws Exception 例外
+	 */
 	@RequestMapping(value = "/getResult/{analysisId}")
 	public List<Medicine> getResult(@PathVariable long analysisId)  throws Exception {
 
@@ -206,6 +237,9 @@ public class KanpoRestController {
 		}
 	}
 
+	/**
+	 * アプリケーションの初期化メソッド
+	 */
 	@PostConstruct
 	public void init() {
 		// 漢方についてのデータを登録しておく

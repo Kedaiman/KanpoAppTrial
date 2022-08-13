@@ -9,10 +9,13 @@ import org.springframework.stereotype.Repository;
 
 import com.kanpo.trial.model.Analysis;
 
+/**
+ * Analysisのリポジトリインターフェイス
+ * @author keita
+ */
 @Repository
 public interface AnalysisRepository extends JpaRepository<Analysis, Long>{
 	public Optional<Analysis> findById(Long id);
 	public int countByUpdateAtLessThan(Timestamp time);
 	public List<Analysis> getByUpdateAtLessThan(Timestamp time);
-	//public void deleteAllByUpdateAtLessThan(Timestamp time);
 }

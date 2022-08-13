@@ -7,6 +7,10 @@ import org.springframework.stereotype.Repository;
 
 import com.kanpo.trial.model.Answer;
 
+/**
+ * Answerのリポジトリインターフェイス
+ * @author keita
+ */
 @Repository
 public interface AnswerRepository extends JpaRepository<Answer, Long>{
 	public Optional<Answer> findById(Long id);

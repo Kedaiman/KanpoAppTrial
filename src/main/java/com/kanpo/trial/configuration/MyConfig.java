@@ -7,9 +7,18 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.kanpo.trial.interceptor.MyInterceptor;
 
+/**
+* Configurationクラス (Bean登録)
+* @author　keita
+*/
 @Configuration
 public class MyConfig implements WebMvcConfigurer {
 
+	/**
+	 *  MyInterceptorをBeanとして登録するコンストラクタ
+	 *
+	 * @return MyInterceptorオブジェクト
+	 */
 	@Bean
 	MyInterceptor myInterceptor() {
 		return new MyInterceptor();
@@ -26,6 +35,11 @@ public class MyConfig implements WebMvcConfigurer {
 	}
 	*/
 
+	/**
+	 *  MyInterceptorをInterceptorに設定するメソッド
+	 *
+	 * @param Interceptorに登録するためのレジストリ
+	 */
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
 		registry.addInterceptor(myInterceptor());

@@ -5,25 +5,42 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+* ログ出力用クラス
+* @author　keita
+*/
 public class MyLogger {
+	/** loggerフィールド */
 	private static Logger logger = null;
 
+	/**
+	 * ログ初期化メソッド
+	 */
 	public static void init() {
 		logger = LoggerFactory.getLogger("SYSTEM");
 	}
 
+	/**
+	 * ログ初期化メソッド
+	 * @param message ログメッセージ
+	 */
 	public static void info(String message) {
 		logger.info(message);
 	}
 
-	public static void info(String message, String... args) {
-		logger.info(MessageFormat.format(message, args));
-	}
-
+	/**
+	 * INFOログ出力
+	 * @param message ログメッセージ
+	 * @param args 置換用データ(可変長引数)
+	 */
 	public static void info(String message, Object... args) {
 		logger.info(MessageFormat.format(message, args));
 	}
 
+	/**
+	 * bodyの入力パラメーター INFOログ出力
+	 * @param paramMap 入力データマップ <key, value>
+	 */
 	public static void info(Map<String, String[]> paramMap) {
 		String message = "query: ";
 		if (paramMap.size() > 0) {
@@ -36,22 +53,44 @@ public class MyLogger {
 		return;
 	}
 
+	/**
+	 * DEBUGログ出力
+	 * @param message メッセージ
+	 */
 	public static void debug(String message) {
 		logger.debug(message);
 	}
 
-	public static void debug(String message, String... args) {
+	/**
+	 * DEBUGログ出力
+	 * @param message ログメッセージ
+	 * @param args 置換用データ(可変長引数)
+	 */
+	public static void debug(String message, Object... args) {
 		logger.debug(MessageFormat.format(message, args));
 	}
 
+	/**
+	 * ERRORログ出力
+	 * @param message メッセージ
+	 */
 	public static void error(String message) {
 		logger.error(message);
 	}
 
+	/**
+	 * ERRORログ出力
+	 * @param message ログメッセージ
+	 * @param args 置換用データ(可変長引数)
+	 */
 	public static void error(String message, String... args) {
 		logger.error(message.formatted(message, args));
 	}
 
+	/**
+	 * ERRORログ出力 (例外情報出力)
+	 * @param e 例外オブジェクト
+	 */
 	public static void error(Exception e) {
 		logger.error(e.getMessage(), e);
 	}

@@ -11,42 +11,70 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
-
+/**
+* Answerクラス　(Entityクラス)
+* @author　keita
+*/
 @Entity
 @Table(name = "answer")
 public class Answer {
 
+	/** IDフィールド(プライマリキー) */
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	@Column
 	@NotNull
 	private long id;
 
+	/** 分析結果(漢方リスト) */
 	@OneToMany
 	@Column
 	private List<Medicine> medicineList;
 
+	/**
+	 * コンストラクタ (デフォルトコンストラクタ)
+	 */
 	public Answer() {
 		super();
 	}
 
+	/**
+	 * コンストラクタ
+	 * @param medicineList 回答結果（漢方リスト)
+	 */
 	public Answer(List<Medicine> medicineList) {
 		super();
 		this.medicineList = medicineList;
 	}
 
+	/**
+	 * ID取得メソッド
+	 * @return IDを返却
+	 */
 	public long getId() {
 		return id;
 	}
 
+	/**
+	 * ID設定メソッド
+	 * @param ID
+	 */
 	public void setId(long id) {
 		this.id = id;
 	}
 
+	/**
+	 * 解析結果（漢方リスト）取得メソッド
+	 * @return 漢方リストを返却
+	 */
 	public List<Medicine> getMedicineList() {
 		return medicineList;
 	}
 
+	/**
+	 * 解析結果（漢方リスト）設定メソッド
+	 * @param 解析結果(漢方リスト)
+	 */
 	public void setMedicineList(List<Medicine> medicineList) {
 		this.medicineList = medicineList;
 	}
