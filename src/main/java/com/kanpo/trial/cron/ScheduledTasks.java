@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import com.kanpo.trial.configuration.MyProperties;
 import com.kanpo.trial.log.MyLogger;
 import com.kanpo.trial.model.Analysis;
 import com.kanpo.trial.repository.AnalysisRepository;
@@ -23,6 +24,9 @@ public class ScheduledTasks {
 	@Autowired
 	AnalysisRepository analysisRepository;
 
+	@Autowired
+	MyProperties myproperties;
+
 	/**
 	 * analysisオブジェクト定期削除実行メソッド
 	 */
@@ -33,7 +37,7 @@ public class ScheduledTasks {
 			Date date = new Date();
 			Calendar calendar = Calendar.getInstance();
 			calendar.setTime(date);
-			calendar.add(Calendar.MINUTE, -1);
+			calendar.add(Calendar.MINUTE, -1 * myproperties.getCronDeleteMinute());
 			date = calendar.getTime();
 			Timestamp timestamp = new Timestamp(date.getTime());
 
