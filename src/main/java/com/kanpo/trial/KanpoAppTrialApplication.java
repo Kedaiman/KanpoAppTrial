@@ -23,5 +23,4 @@ public class KanpoAppTrialApplication {
 		// サービス起動
 		SpringApplication.run(KanpoAppTrialApplication.class, args);
 	}
-
 }

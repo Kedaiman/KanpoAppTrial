@@ -83,8 +83,8 @@ public class MyLogger {
 	 * @param message ログメッセージ
 	 * @param args 置換用データ(可変長引数)
 	 */
-	public static void error(String message, String... args) {
-		logger.error(message.formatted(message, args));
+	public static void error(String message, Object... args) {
+		logger.error(MessageFormat.format(message, args));
 	}
 
 	/**
