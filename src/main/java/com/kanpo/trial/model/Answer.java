@@ -7,7 +7,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.OneToMany;
+import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
@@ -27,7 +27,7 @@ public class Answer {
 	private long id;
 
 	/** 分析結果(漢方リスト) */
-	@OneToMany
+	@ManyToMany
 	@Column
 	private List<Medicine> medicineList;
 
