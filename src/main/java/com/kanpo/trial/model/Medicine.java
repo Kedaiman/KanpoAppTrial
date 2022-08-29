@@ -31,6 +31,11 @@ public class Medicine {
 	@NotEmpty
 	private String name;
 
+	/** 漢方名 (ふりがな) */
+	@Column
+	@NotNull
+	private String nameKana;
+
 	/** 漢方説明 */
 	@Column
 	private String detailInfo;
@@ -55,6 +60,20 @@ public class Medicine {
 		super();
 		this.name = name;
 		this.detailInfo = detailInfo;
+	}
+
+	/**
+	 * コンストラクタ
+	 * @param name 漢方名
+	 * @param detailInfo 漢方説明
+	 * @param imagePath 画像パス
+	 */
+	public Medicine(String name, String nameKana, String detailInfo, String imagePath) {
+		super();
+		this.name = name;
+		this.nameKana = nameKana;
+		this.detailInfo = detailInfo;
+		this.imagePath = imagePath;
 	}
 
 	/**
@@ -87,6 +106,23 @@ public class Medicine {
 	 */
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	/**
+	 * 漢方名(ふりがな)取得メソッド
+	 * @return 漢方名(ふりがな)を返却
+	 */
+
+	public String getNameKana() {
+		return nameKana;
+	}
+
+	/**
+	 * 漢方名(ふりがな)設定メソッド
+	 * @param 漢方名(ふりがな)
+	 */
+	public void setNameKana(String nameKana) {
+		this.nameKana = nameKana;
 	}
 
 	/**
