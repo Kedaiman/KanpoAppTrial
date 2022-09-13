@@ -29,9 +29,11 @@ public class ScheduledTasks {
 
 	/**
 	 * analysisオブジェクト定期削除実行メソッド
+	 * @return 削除したanalysisオブジェクト数
 	 */
 	@Scheduled(cron="${scheduledDeleteAnalysis.cron}")
-	public void scheduledDeleteAnalysis() {
+	public int scheduledDeleteAnalysis() {
+		int deleteCount = 0;
 		try {
 			// 現在時刻 - 1分のTimestampオブジェクトを作成する
 			Date date = new Date();
@@ -44,10 +46,11 @@ public class ScheduledTasks {
 			//　定期的に分析オブジェクトを削除していく
 			List<Analysis> deleteAnalysisList = analysisRepository.getByUpdateAtLessThan(timestamp);
 			MyLogger.info("delete count of analysisObject = {0}", deleteAnalysisList.size());
+			deleteCount = deleteAnalysisList.size();
 			analysisRepository.deleteAll(deleteAnalysisList);
 		} catch (Exception e) {
 			MyLogger.error(e);
 		}
-		return;
+		return deleteCount;
 	}
 }
