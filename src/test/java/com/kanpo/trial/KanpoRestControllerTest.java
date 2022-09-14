@@ -6,6 +6,7 @@ import com.kanpo.trial.log.MyLogger;
 import com.kanpo.trial.repository.AnalysisRepository;
 import com.kanpo.trial.restRequest.SendAnswerRequest;
 import com.kanpo.trial.restResponse.NextQuestion;
+import com.kanpo.trial.service.QuestionTreeService;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -65,7 +66,7 @@ public class KanpoRestControllerTest {
         long analysisId = this.executeStartAnalysisFromApi().getAnalysisId();
 
         // analysisIdに紐づく質問IDはトップの質問であることを確認
-        assertEquals(KanpoRestController.topQuestionId, analysisRepository.findById(analysisId)
+        assertEquals(QuestionTreeService.topQuestionId, analysisRepository.findById(analysisId)
                 .get().getNowQuestion().getId());
 
         // sendAnswer APIを実行する
@@ -78,7 +79,7 @@ public class KanpoRestControllerTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
 
         // analysisIdに紐づく質問IDがトップ質問以外になっていることを確認
-        assertNotEquals(KanpoRestController.topQuestionId, analysisRepository.findById(analysisId)
+        assertNotEquals(QuestionTreeService.topQuestionId, analysisRepository.findById(analysisId)
                 .get().getNowQuestion().getId());
     }
 
@@ -148,7 +149,7 @@ public class KanpoRestControllerTest {
         long analysisId = this.executeStartAnalysisFromApi().getAnalysisId();
 
         // analysisIdに紐づく質問IDはトップの質問であることを確認
-        assertEquals(KanpoRestController.topQuestionId, analysisRepository.findById(analysisId)
+        assertEquals(QuestionTreeService.topQuestionId, analysisRepository.findById(analysisId)
                 .get().getNowQuestion().getId());
 
         // sendAnswer APIを実行
@@ -161,7 +162,7 @@ public class KanpoRestControllerTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
 
         // analysisIdに紐づく質問IDがトップ質問以外になっていることを確認
-        assertNotEquals(KanpoRestController.topQuestionId, analysisRepository.findById(analysisId)
+        assertNotEquals(QuestionTreeService.topQuestionId, analysisRepository.findById(analysisId)
                 .get().getNowQuestion().getId());
 
         // backQuestion APIを実行
@@ -170,7 +171,7 @@ public class KanpoRestControllerTest {
                 .andExpect(status().isOk());
 
         // analysisIdに紐づく質問IDはトップの質問であることを確認
-        assertEquals(KanpoRestController.topQuestionId, analysisRepository.findById(analysisId)
+        assertEquals(QuestionTreeService.topQuestionId, analysisRepository.findById(analysisId)
                 .get().getNowQuestion().getId());
     }
 
@@ -206,7 +207,7 @@ public class KanpoRestControllerTest {
         long analysisId = this.executeStartAnalysisFromApi().getAnalysisId();
 
         // analysisIdに紐づく質問がトップ質問であることを確認
-        assertEquals(KanpoRestController.topQuestionId, analysisRepository.findById(analysisId)
+        assertEquals(QuestionTreeService.topQuestionId, analysisRepository.findById(analysisId)
                 .get().getNowQuestion().getId());
 
         // backQuestion APIを実行
