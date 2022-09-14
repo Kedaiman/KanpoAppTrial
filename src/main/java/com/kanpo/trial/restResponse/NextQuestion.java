@@ -53,6 +53,11 @@ public class NextQuestion {
 	}
 
 	/**
+	 * コンストラクタ
+	 */
+	public NextQuestion() {}
+
+	/**
 	 * レスポンス内容をログ出力するメソッド
 	 */
 	public void outputLog() {

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kanpo.trial.log.MyLogger;
 import com.kanpo.trial.repository.AnalysisRepository;
 import com.kanpo.trial.restRequest.SendAnswerRequest;
+import com.kanpo.trial.restResponse.NextQuestion;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -47,37 +48,28 @@ public class KanpoRestControllerTest {
     @Test
     @DisplayName("/startAnalysis success")
     public void startAnalysisRequest() throws Exception {
+        // Analysisオブジェクトが存在しないことを確認
         assertEquals(0, analysisRepository.findAll().size());
+        // API実行し、成功することを確認
         mockMvc.perform(MockMvcRequestBuilders.get("/startAnalysis"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+        // Analysisオブジェクトが1件登録済みであることを確認
         assertEquals(1, analysisRepository.findAll().size());
     }
 
     @Test
     @DisplayName("/sendAnswer success")
     public void sendAnswerRequestExistAnalysisId() throws Exception {
-        String jsonString = mockMvc.perform(MockMvcRequestBuilders.get("/startAnalysis"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+        // startAnalysis APIでanalysisIdを取得する
+        long analysisId = this.executeStartAnalysisFromApi().getAnalysisId();
 
-        Map<String, Object> map = null;
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            map = mapper.readValue(jsonString, new TypeReference<Map<String, Object>>() {});
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw(e);
-        }
-        int analysisId = ((Integer)map.get("analysisId")).intValue();
-
-        assertEquals(KanpoRestController.topQuestionId, analysisRepository.findById(Long.valueOf(analysisId))
+        // analysisIdに紐づく質問IDはトップの質問であることを確認
+        assertEquals(KanpoRestController.topQuestionId, analysisRepository.findById(analysisId)
                 .get().getNowQuestion().getId());
 
-        SendAnswerRequest requestBody = new SendAnswerRequest(Long.valueOf(analysisId), 0);
+        // sendAnswer APIを実行する
+        SendAnswerRequest requestBody = new SendAnswerRequest(analysisId, 0);
         ObjectMapper objectMapper = new ObjectMapper();
         mockMvc.perform(post("/sendAnswer")
                 .content(objectMapper.writeValueAsString(requestBody))
@@ -85,13 +77,16 @@ public class KanpoRestControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
 
-        assertNotEquals(KanpoRestController.topQuestionId, analysisRepository.findById(Long.valueOf(analysisId))
+        // analysisIdに紐づく質問IDがトップ質問以外になっていることを確認
+        assertNotEquals(KanpoRestController.topQuestionId, analysisRepository.findById(analysisId)
                 .get().getNowQuestion().getId());
     }
 
     @Test
     @DisplayName("/sendAnswer fail not exist analysisId")
     public void sendAnswerRequestNotExistAnalysisId() throws Exception {
+        // 存在しないanalysisIdでsendAnswer APIを実行
+        // 400が返却されることを確認
         SendAnswerRequest requestBody = new SendAnswerRequest(-1, 0);
         ObjectMapper objectMapper = new ObjectMapper();
         mockMvc.perform(post("/sendAnswer")
@@ -104,8 +99,11 @@ public class KanpoRestControllerTest {
     @Test
     @DisplayName("/sendAnswer fail already end")
     public void sendAnswerRequestAlreadyEnd() throws Exception {
+        // Analysisオブジェクトを登録 (status=1[END])
         jdbc.execute("insert into analysis(id, status, answer_id) values(1, 1, 1)");
 
+        // sendAnswer API実行
+        // 400が返却されることを確認
         SendAnswerRequest requestBody = new SendAnswerRequest(1, 0);
         ObjectMapper objectMapper = new ObjectMapper();
         mockMvc.perform(post("/sendAnswer")
@@ -118,28 +116,14 @@ public class KanpoRestControllerTest {
     @Test
     @DisplayName("/sendAnswer fail illegal answer")
     public void sendAnswerRequestIllegalAnswer() throws Exception {
-        String jsonString = mockMvc.perform(MockMvcRequestBuilders.get("/startAnalysis"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+        // startAnalysis APIを実行
+        NextQuestion nextQuestion = this.executeStartAnalysisFromApi();
+        long analysisId = nextQuestion.getAnalysisId();
+        int optionLength = nextQuestion.getOptionList().size();
 
-        Map<String, Object> map = null;
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            map = mapper.readValue(jsonString, new TypeReference<Map<String, Object>>() {});
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw(e);
-        }
-        int analysisId = ((Integer)map.get("analysisId")).intValue();
-        int optionLength = ((List)map.get("optionList")).size();
-
-        assertEquals(KanpoRestController.topQuestionId, analysisRepository.findById(Long.valueOf(analysisId))
-                .get().getNowQuestion().getId());
-
-        SendAnswerRequest requestBody = new SendAnswerRequest(Long.valueOf(analysisId), optionLength);
+        // sendAnswer APIを実行
+        // 400が返却されることを確認
+        SendAnswerRequest requestBody = new SendAnswerRequest(analysisId, optionLength);
         ObjectMapper objectMapper = new ObjectMapper();
         mockMvc.perform(post("/sendAnswer")
                 .content(objectMapper.writeValueAsString(requestBody))
@@ -147,7 +131,9 @@ public class KanpoRestControllerTest {
                 .andExpect(status().is(is(400)))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
 
-        requestBody = new SendAnswerRequest(Long.valueOf(analysisId), -1);
+        // sendAnswer APIを実行
+        // 400が返却されることを確認
+        requestBody = new SendAnswerRequest(analysisId, -1);
         mockMvc.perform(post("/sendAnswer")
                 .content(objectMapper.writeValueAsString(requestBody))
                 .contentType(MediaType.APPLICATION_JSON))
@@ -158,27 +144,15 @@ public class KanpoRestControllerTest {
     @Test
     @DisplayName("/backQuestion success")
     public void backQuestionRequest() throws Exception {
-        String jsonString = mockMvc.perform(MockMvcRequestBuilders.get("/startAnalysis"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+        // startAnalysis APIを実行
+        long analysisId = this.executeStartAnalysisFromApi().getAnalysisId();
 
-        Map<String, Object> map = null;
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            map = mapper.readValue(jsonString, new TypeReference<Map<String, Object>>() {});
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw(e);
-        }
-        int analysisId = ((Integer)map.get("analysisId")).intValue();
-
-        assertEquals(KanpoRestController.topQuestionId, analysisRepository.findById(Long.valueOf(analysisId))
+        // analysisIdに紐づく質問IDはトップの質問であることを確認
+        assertEquals(KanpoRestController.topQuestionId, analysisRepository.findById(analysisId)
                 .get().getNowQuestion().getId());
 
-        SendAnswerRequest requestBody = new SendAnswerRequest(Long.valueOf(analysisId), 1);
+        // sendAnswer APIを実行
+        SendAnswerRequest requestBody = new SendAnswerRequest(analysisId, 1);
         ObjectMapper objectMapper = new ObjectMapper();
         mockMvc.perform(post("/sendAnswer")
                 .content(objectMapper.writeValueAsString(requestBody))
@@ -186,20 +160,25 @@ public class KanpoRestControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
 
-        assertNotEquals(KanpoRestController.topQuestionId, analysisRepository.findById(Long.valueOf(analysisId))
+        // analysisIdに紐づく質問IDがトップ質問以外になっていることを確認
+        assertNotEquals(KanpoRestController.topQuestionId, analysisRepository.findById(analysisId)
                 .get().getNowQuestion().getId());
 
+        // backQuestion APIを実行
         mockMvc.perform(MockMvcRequestBuilders
-                .get("/backQuestion/" + ((Integer)analysisId).toString()))
+                .get("/backQuestion/" + ((Long)analysisId).toString()))
                 .andExpect(status().isOk());
 
-        assertEquals(KanpoRestController.topQuestionId, analysisRepository.findById(Long.valueOf(analysisId))
+        // analysisIdに紐づく質問IDはトップの質問であることを確認
+        assertEquals(KanpoRestController.topQuestionId, analysisRepository.findById(analysisId)
                 .get().getNowQuestion().getId());
     }
 
     @Test
     @DisplayName("/backQuestion fail not exist analysisId")
     public void backQuestionRequestNotExistAnalysisId() throws Exception {
+        // 存在しないanalysisIdでbackQuestion APIを実行
+        // 400が返却されることを確認
         mockMvc.perform(MockMvcRequestBuilders
                 .get("/backQuestion/-1"))
                 .andExpect(status().is(is(400)))
@@ -209,7 +188,11 @@ public class KanpoRestControllerTest {
     @Test
     @DisplayName("/backQuestion fail already end")
     public void backQuestionRequestAlreadyEnd() throws Exception {
+        // Analysisオブジェクトを登録 (status=1[END])
         jdbc.execute("insert into analysis(id, status, answer_id) values(1, 1, 1)");
+
+        // backQuestion API実行
+        // 400が返却されることを確認
         mockMvc.perform(MockMvcRequestBuilders
                 .get("/backQuestion/1"))
                 .andExpect(status().is(is(400)))
@@ -219,28 +202,17 @@ public class KanpoRestControllerTest {
     @Test
     @DisplayName("/backQuestion fail top Question")
     public void backQuestionRequestTop() throws Exception {
-        String jsonString = mockMvc.perform(MockMvcRequestBuilders.get("/startAnalysis"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+        // startAnalysis APIを実行
+        long analysisId = this.executeStartAnalysisFromApi().getAnalysisId();
 
-        Map<String, Object> map = null;
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            map = mapper.readValue(jsonString, new TypeReference<Map<String, Object>>() {});
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw(e);
-        }
-        int analysisId = ((Integer)map.get("analysisId")).intValue();
-
-        assertEquals(KanpoRestController.topQuestionId, analysisRepository.findById(Long.valueOf(analysisId))
+        // analysisIdに紐づく質問がトップ質問であることを確認
+        assertEquals(KanpoRestController.topQuestionId, analysisRepository.findById(analysisId)
                 .get().getNowQuestion().getId());
 
+        // backQuestion APIを実行
+        // 400が返却されることを確認
         mockMvc.perform(MockMvcRequestBuilders
-                .get("/backQuestion/" + ((Integer)analysisId).toString()))
+                .get("/backQuestion/" + ((Long)analysisId).toString()))
                 .andExpect(status().is(is(400)))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
@@ -248,48 +220,19 @@ public class KanpoRestControllerTest {
     @Test
     @DisplayName("/getResult success")
     public void getResultRequest() throws Exception {
-        String jsonString = mockMvc.perform(MockMvcRequestBuilders.get("/startAnalysis"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        Map<String, Object> map = null;
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            map = mapper.readValue(jsonString, new TypeReference<Map<String, Object>>() {});
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw(e);
-        }
-        int analysisId = ((Integer)map.get("analysisId")).intValue();
+        // startAnalysis APIを実行
+        long analysisId = this.executeStartAnalysisFromApi().getAnalysisId();
         boolean isNextExist = true;
-
-
-        SendAnswerRequest requestBody = new SendAnswerRequest(Long.valueOf(analysisId), 1);
         ObjectMapper objectMapper = new ObjectMapper();
+        // 質問treeが終了するまでループ
         while (isNextExist) {
-            jsonString = mockMvc.perform(post("/sendAnswer")
-                    .content(objectMapper.writeValueAsString(requestBody))
-                    .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andReturn()
-                    .getResponse()
-                    .getContentAsString();
-
-            try {
-                map = mapper.readValue(jsonString, new TypeReference<Map<String, Object>>() {});
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw(e);
-            }
-            isNextExist = ((Boolean)map.get("isNextExist")).booleanValue();
+            // sendAnswer APIを実行
+            isNextExist = this.executeSendAnswerApi(analysisId).getIsNextExist();
         }
 
+        // getResult API実行
         mockMvc.perform(MockMvcRequestBuilders
-                .get("/getResult/" + ((Integer)analysisId).toString()))
+                .get("/getResult/" + ((Long)analysisId).toString()))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
@@ -297,6 +240,8 @@ public class KanpoRestControllerTest {
     @Test
     @DisplayName("/getResult fail not exist analysisId")
     public void getResultRequestNotExistAnalysisId() throws Exception {
+        // 存在しないanalysisIdでgetResult API実行
+        // 400が返却されることを確認
         mockMvc.perform(MockMvcRequestBuilders
                 .get("/getResult/-1"))
                 .andExpect(status().is(is(400)))
@@ -306,7 +251,10 @@ public class KanpoRestControllerTest {
     @Test
     @DisplayName("/getResult fail yet continue")
     public void getResultRequestYetContinue() throws Exception {
+        // 継続中のstatusのAnalysisオブジェクトも登録
         jdbc.execute("insert into analysis(id, status, answer_id) values(1, 0, 1)");
+        // getResult APIを実行
+        // 400が返却されることを確認
         mockMvc.perform(MockMvcRequestBuilders
                 .get("/getResult/1"))
                 .andExpect(status().is(is(400)))
@@ -316,7 +264,10 @@ public class KanpoRestControllerTest {
     @Test
     @DisplayName("/getResult fail illegal answerId")
     public void getResultRequestIllegalAnswerId() throws Exception {
+        // answerId=-1(不正な値)のAnalysisオブジェクトを登録
         jdbc.execute("insert into analysis(id, status, answer_id) values(1, 1, -1)");
+        // getResult APIを実行
+        // 500が返却されることを確認
         mockMvc.perform(MockMvcRequestBuilders
                 .get("/getResult/1"))
                 .andExpect(status().is(is(500)))
@@ -326,5 +277,44 @@ public class KanpoRestControllerTest {
     @AfterEach
     public void afterEach() {
         jdbc.execute("DELETE FROM analysis");
+    }
+
+    private NextQuestion executeStartAnalysisFromApi() throws Exception {
+        String jsonString = mockMvc.perform(MockMvcRequestBuilders.get("/startAnalysis"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            NextQuestion nextQuestion = mapper.readValue(jsonString, NextQuestion.class);
+            return nextQuestion;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    private NextQuestion executeSendAnswerApi(long analysisId) throws Exception {
+        SendAnswerRequest requestBody = new SendAnswerRequest(analysisId, 1);
+        ObjectMapper mapper = new ObjectMapper();
+        String jsonString = mockMvc.perform(post("/sendAnswer")
+                .content(mapper.writeValueAsString(requestBody))
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        try {
+            NextQuestion nextQuestion = mapper.readValue(jsonString, NextQuestion.class);
+            return nextQuestion;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 }
