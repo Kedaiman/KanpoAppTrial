@@ -7,11 +7,7 @@ import java.util.Optional;
 import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.kanpo.trial.exception.BadRequestException;
 import com.kanpo.trial.exception.InternalServerException;
@@ -87,7 +83,7 @@ public class KanpoRestController {
 	 * @return 次の質問を返却します
 	 * @throws Exception 例外
 	 */
-	@RequestMapping(value="/sendAnswer", method=RequestMethod.POST)
+	@PostMapping(value="/sendAnswer")
 	public NextQuestion sendAnswer(
 			@RequestBody SendAnswerRequest request) throws Exception {
 
@@ -1331,78 +1327,6 @@ public class KanpoRestController {
 		// 質問12の親ノードはトップ質問
 		questionList.get(12).setBackNode(questionList.get(13));
 		questionRepository.saveAndFlush(questionList.get(12));
-
-		/*
-		// 漢方についてのデータを登録しておく
-		Medicine med1 = new Medicine();
-		med1.setName("漢方1");
-		med1.setDetailInfo("漢方1についての説明です");
-		med1.setImagePath("img01.jpeg");
-		medicineRepository.saveAndFlush(med1);
-		Medicine med2 = new Medicine();
-		med2.setName("漢方2");
-		med2.setDetailInfo("漢方2についての説明です");
-		med2.setImagePath("img03.jpg");
-		medicineRepository.saveAndFlush(med2);
-		Medicine med3 = new Medicine();
-		med3.setName("漢方3");
-		med3.setDetailInfo("漢方3についての説明です");
-		med3.setImagePath("img04.jpeg");
-		medicineRepository.saveAndFlush(med3);
-
-		// 解答についてデータを登録しておく
-		Answer ans1 = new Answer();
-		ArrayList<Medicine> medicineList = new ArrayList<>();
-		medicineList.add(med1);
-		medicineList.add(med2);
-		medicineList.add(med3);
-		ans1.setMedicineList(medicineList);
-		answerRepository.saveAndFlush(ans1);
-
-		// 質問についてデータを登録しておく
-		Question que1 = new Question();
-		que1.setQuestionContent("以下から選択しなさい");
-		ArrayList<QuestionOption> optionList = new ArrayList<>();
-		QuestionOption option1 = new QuestionOption("選択Aです", ans1);
-		QuestionOption option2 = new QuestionOption("選択Bです", ans1);
-		QuestionOption option3 = new QuestionOption("選択Cです", ans1);
-		QuestionOption option4 = new QuestionOption("選択Dです", ans1);
-		questionOptionRepository.saveAndFlush(option1);
-		questionOptionRepository.saveAndFlush(option2);
-		questionOptionRepository.saveAndFlush(option3);
-		questionOptionRepository.saveAndFlush(option4);
-		optionList.add(option1);
-		optionList.add(option2);
-		optionList.add(option3);
-		optionList.add(option4);
-		que1.setOptionList(optionList);
-		questionRepository.saveAndFlush(que1);
-
-		Question que2 = new Question();
-		que2.setQuestionContent("トップ質問: 以下から選択しなさい");
-		ArrayList<QuestionOption> optionList2 = new ArrayList<>();
-		QuestionOption option5 = new QuestionOption("選択Eです", que1);
-		QuestionOption option6 = new QuestionOption("選択Fです", ans1);
-		QuestionOption option7 = new QuestionOption("選択Gです", ans1);
-		QuestionOption option8 = new QuestionOption("選択Hです", ans1);
-		questionOptionRepository.saveAndFlush(option5);
-		questionOptionRepository.saveAndFlush(option6);
-		questionOptionRepository.saveAndFlush(option7);
-		questionOptionRepository.saveAndFlush(option8);
-		optionList2.add(option5);
-		optionList2.add(option6);
-		optionList2.add(option7);
-		optionList2.add(option8);
-		que2.setOptionList(optionList2);
-		questionRepository.saveAndFlush(que2);
-
-		// que1の親ノードにque2を登録する
-		que1.setBackNode(que2);
-		questionRepository.saveAndFlush(que1);
-
-		topQuestionId = que2.getId();
-		*/
-
 
 		return;
 	}
