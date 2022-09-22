@@ -21,6 +21,7 @@ import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -273,6 +274,42 @@ public class KanpoRestControllerTest {
                 .get("/getResult/1"))
                 .andExpect(status().is(is(500)))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+    }
+
+    @Test
+    @DisplayName("/searchMedicines success")
+    public void searchMedicinesSuccess() throws Exception {
+        jdbc.execute("insert into medicine(id,name,name_kana) values (100,'漢方1','かんぽういち')");
+        jdbc.execute("insert into medicine(id,name,name_kana) values (101,'漢方2','かんぽうに')");
+
+        mockMvc.perform(MockMvcRequestBuilders
+                .get("/searchMedicines")
+                .param("searchWord", "漢方")
+                .param("pageSize", "100")
+                .param("currentPage", "0"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)));
+    }
+
+    @Test
+    @DisplayName("/searchMedicines invalid parameters")
+    public void searchMedicinesInvalidParameters() throws Exception {
+        jdbc.execute("insert into medicine(id,name,name_kana) values (100,'漢方1','かんぽういち')");
+        jdbc.execute("insert into medicine(id,name,name_kana) values (101,'漢方2','かんぽうに')");
+
+        mockMvc.perform(MockMvcRequestBuilders
+                .get("/searchMedicines")
+                .param("searchWord", "漢方")
+                .param("pageSize", "abc")
+                .param("currentPage", "0"))
+                .andExpect(status().is(is(400)));
+
+        mockMvc.perform(MockMvcRequestBuilders
+                .get("/searchMedicines")
+                .param("searchWord", "漢方")
+                .param("pageSize", "100")
+                .param("currentPage", "abc"))
+                .andExpect(status().is(is(400)));
     }
 
     @AfterEach
