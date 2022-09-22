@@ -5,8 +5,10 @@ import java.util.List;
 import java.util.Optional;
 
 import javax.annotation.PostConstruct;
+import javax.persistence.criteria.CriteriaBuilder;
 
 import com.kanpo.trial.service.QuestionTreeService;
+import com.kanpo.trial.service.SearchMedicineService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,6 +37,9 @@ public class KanpoRestController {
 
 	@Autowired
 	QuestionTreeService questionTreeService;
+
+	@Autowired
+	SearchMedicineService searchMedicineService;
 
 	/**
 	 * /startAnalysis API
@@ -95,7 +100,7 @@ public class KanpoRestController {
 	}
 
 	/**
-	 * /getResult APIの処理メソッド
+	 * /getResult API
 	 *
 	 * @param analysisId 解析ID
 	 * @return 解析結果を返却します
@@ -106,6 +111,26 @@ public class KanpoRestController {
 
 		try {
 			return questionTreeService.getAnalysisResult(analysisId);
+		} catch (Exception e) {
+			MyLogger.error(e);
+			throw e;
+		}
+	}
+
+	/**
+	 * /searchMedicines API
+	 */
+	@GetMapping("/searchMedicines")
+	public List<Medicine> searchMedicines(@RequestParam("searchWord") String searchWord,
+										  @RequestParam("pageSize") String pageSize,
+										  @RequestParam("currentPage") String currentPage) throws Exception {
+		try {
+			return searchMedicineService.getMatchedSearchWordMedicines(searchWord,
+					Integer.parseInt(pageSize),
+					Integer.parseInt(currentPage));
+		} catch(NumberFormatException e) {
+			MyLogger.error(e);
+			throw new BadRequestException("invalid parameters");
 		} catch (Exception e) {
 			MyLogger.error(e);
 			throw e;
