@@ -3,25 +3,22 @@ package com.kanpo.trial.cron;
 import com.kanpo.trial.KanpoAppTrialApplication;
 import com.kanpo.trial.configuration.MyProperties;
 import com.kanpo.trial.log.MyLogger;
-import com.kanpo.trial.model.Analysis;
 import com.kanpo.trial.repository.AnalysisRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.TestPropertySource;
 
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.when;
 
 @SpringBootTest(classes= KanpoAppTrialApplication.class)
+@TestPropertySource("/test.properties")
 public class ScheduledTasksTest {
     @Autowired
     private JdbcTemplate jdbc;
